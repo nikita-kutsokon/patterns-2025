@@ -1,5 +1,5 @@
 const data = `city,population,area,density,country
-  Shanghai,24256800,6340,3826,China
+  Shanghai,24256800,6340,af,China
   Delhi,16787941,1484,11313,India
   Lagos,16060303,1171,13712,Nigeria
   Istanbul,14160467,5461,2593,Turkey
@@ -12,7 +12,7 @@ const data = `city,population,area,density,country
 
 const sortRowsByDensity = (rows) => rows.slice().sort((a, b) => b.density - a.density);
 const getPercentageOfNumber = (value, maxValue) => Math.round((value * 100) / maxValue);
-const parseStrToNumber = (str) => isNaN(parseInt(str.trim())) ? 0 : parseInt(str.trim());
+const parseStrToNumber = (str) => isNaN(parseInt(str.trim())) ? null : parseInt(str.trim());
 
 const normalizeDataRow = (row) => {
     const rowValues = row.split(',');
@@ -34,7 +34,7 @@ const maxDesnity = normalizedSortedRowsByDensity[0].density;
 
 const output = normalizedSortedRowsByDensity.map(row => ({
   item: JSON.stringify(row),
-  densityRatio: getPercentageOfNumber(row.density, maxDesnity)
+  densityRatio: (maxDesnity && row.density) ? getPercentageOfNumber(row.density, maxDesnity) : null
 }));
 
 console.table(output)
