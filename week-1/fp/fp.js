@@ -10,33 +10,62 @@ const data = `city,population,area,density,country
   New York City,8537673,784,10892,United States
   Bangkok,8280925,1569,5279,Thailand`;
 
-const sortRowsByDensity = (rows) => rows.slice().sort((a, b) => b.density - a.density);
-const getPercentageOfNumber = (value, maxValue) => Math.round((value * 100) / maxValue);
-const parseStrToNumber = (str) => isNaN(parseInt(str.trim())) ? null : parseInt(str.trim());
+const isValidNumber = (value) => typeof value === "number" && !isNaN(value) ? true : false;
+const parseStrToNumber = (str) => isValidNumber(parseInt(str.trim())) ? parseInt(str.trim()) : null;
+const getFirstPropertyValue = (array, property) => array[0] && property in array[0] ? array[0][property] : null;
+const getPercentageOfMaxNumber = (value, maxValue) => (value && maxValue && maxValue !== 0) ? Math.round((value * 100) / maxValue) : null;
 
-const normalizeDataRow = (row) => {
-    const rowValues = row.split(',');
+const normalizeRawDataRow = (row) => {
+  const rowValues = row.split(",");
 
-    return {
-        city: rowValues[0],
-        country: rowValues[4],
-        area: parseStrToNumber(rowValues[2]),
-        density: parseStrToNumber(rowValues[3]),
-        population: parseStrToNumber(rowValues[1]),
-    }
+  return {
+    city: rowValues[0],
+    country: rowValues[4],
+    area: parseStrToNumber(rowValues[2]),
+    density: parseStrToNumber(rowValues[3]),
+    population: parseStrToNumber(rowValues[1]),
+  };
 };
 
-const dataRows = data.trim().split("\n").slice(1);
-const normalizedDataRows = dataRows.map(normalizeDataRow);
-const normalizedSortedRowsByDensity = sortRowsByDensity(normalizedDataRows);
+const getSortedObjectsArrayByProperty = (array, property, order = "asc") =>
+  array.sort((valA, valB) => {
+    if (!(property in valA) || !(property in valB)) return 0;
+  
+    const a = valA[property];
+    const b = valB[property];
 
-const maxDesnity = normalizedSortedRowsByDensity[0].density;
+    const orderMultiplier = order === "desc" ? -1 : 1;
+    const comparisonResult = a > b ? 1 : a < b ? -1 : 0;
 
-const output = normalizedSortedRowsByDensity.map(row => ({
-  item: JSON.stringify(row),
-  densityRatio: (maxDesnity && row.density) ? getPercentageOfNumber(row.density, maxDesnity) : null
-}));
+    return comparisonResult * orderMultiplier;
+  });
 
-console.table(output)
+const getWithDensityRatio = (array, maxDesnity) => 
+  array.map(data => { 
+    return {
+        ...data, 
+        densityRatio: getPercentageOfMaxNumber(data.density, maxDesnity) 
+      }
+  });
 
-module.exports = { normalizeDataRow, sortRowsByDensity, getPercentageOfNumber, parseStrToNumber };
+
+const rawDataRows = data.trim().split("\n").slice(1);
+const normalizedDataRows = rawDataRows.map(normalizeRawDataRow);
+const sortedByDensity = getSortedObjectsArrayByProperty(normalizedDataRows, "density", "desc");
+
+const maxDesnity = getFirstPropertyValue(sortedByDensity, "density");
+const withDensityRatio = getWithDensityRatio(sortedByDensity, maxDesnity);
+
+const outputTable = withDensityRatio.map(({ densityRatio, ...rest }) => ({ item: JSON.stringify(rest), densityRatio }));
+
+console.table(outputTable);
+
+module.exports = {
+  isValidNumber,
+  parseStrToNumber,
+  getWithDensityRatio,
+  normalizeRawDataRow,
+  getFirstPropertyValue,
+  getPercentageOfMaxNumber,
+  getSortedObjectsArrayByProperty,
+};
